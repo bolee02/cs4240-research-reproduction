@@ -37,7 +37,6 @@ class AutoEncoder(torch.nn.Module):
         """
         layers = []
         for curr_weights, next_weights in zip(self.weights[:-1], self.weights[1:]):
-            print(curr_weights, next_weights)
             layers.append(torch.nn.Linear(curr_weights, next_weights))
             layers.append(self.activation_function)
         
@@ -47,7 +46,6 @@ class AutoEncoder(torch.nn.Module):
     def __create_decoder(self) -> None:
         layers = []
         for curr_weights, next_weights in zip(reversed(self.weights[1:]), reversed(self.weights[:-1])):
-            print(curr_weights, next_weights)
             layers.append(torch.nn.Linear(curr_weights, next_weights))
             layers.append(self.activation_function)
         
@@ -67,12 +65,13 @@ class AutoEncoder(torch.nn.Module):
             
     def forward(self, x):
         return self.net(x)
-    
-params = {'activation': 'relu', 'weights': [2, 3 , 4]}
 
-encoder = AutoEncoder(params=params)
-out = encoder(torch.ones(2))
-print(out)
+if __name__ == '__main__':
+    params = {'activation': 'relu', 'weights': [2, 3 , 4]}
 
-decoder = AutoEncoder(params=params, name='decoder')
-print(decoder(torch.ones(4)))
+    encoder = AutoEncoder(params=params)
+    out = encoder(torch.ones(2))
+    print(out)
+
+    decoder = AutoEncoder(params=params, name='decoder')
+    print(decoder(out))
