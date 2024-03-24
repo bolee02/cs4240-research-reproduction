@@ -37,20 +37,22 @@ class AutoEncoder(torch.nn.Module):
         """
         layers = []
         for curr_weights, next_weights in zip(self.weights[:-1], self.weights[1:]):
+            print(curr_weights, next_weights)
             layers.append(torch.nn.Linear(curr_weights, next_weights))
             layers.append(self.activation_function)
         
         # Ignore last entry (array ends with activation function, should end with Linear layer)
-        self.module = torch.nn.Sequential(layers[:-1])
+        self.net = torch.nn.Sequential(*layers[:-1])
         
     def __create_decoder(self) -> None:
         layers = []
-        for curr_weights, next_weights in reversed(zip(self.weights[:-1], self.weights[1:])):
+        for curr_weights, next_weights in zip(reversed(self.weights[1:]), reversed(self.weights[:-1])):
+            print(curr_weights, next_weights)
             layers.append(torch.nn.Linear(curr_weights, next_weights))
             layers.append(self.activation_function)
         
         # Ignore last entry (array ends with activation function, should end with Linear layer)
-        self.module = torch.nn.Sequential(layers[:-1])
+        self.net = torch.nn.Sequential(*layers[:-1])
         
     def __get_activation(self, activation='relu') -> torch.nn.Module:
         match (activation):
@@ -59,9 +61,18 @@ class AutoEncoder(torch.nn.Module):
             case self.SIGMOID:
                 return torch.nn.Sigmoid()
             case self.ELU:
-                return torch.nn.Sigmoid()
+                return torch.nn.ELU()
             case _:
                 raise TypeError(f"Invalid activation function {activation}")
             
     def forward(self, x):
-        return self.module(x)
+        return self.net(x)
+    
+params = {'activation': 'relu', 'weights': [2, 3 , 4]}
+
+encoder = AutoEncoder(params=params)
+out = encoder(torch.ones(2))
+print(out)
+
+decoder = AutoEncoder(params=params, name='decoder')
+print(decoder(torch.ones(4)))
