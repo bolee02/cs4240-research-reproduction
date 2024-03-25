@@ -13,7 +13,7 @@ class AutoEncoder(torch.nn.Module):
 
         Args:
             params dict: dict must contain keys activation and weights.
-                Additionally, we assume that weights also contains the input and output dimension
+                Additionally, we assume that weights also contains the input and output dimension [128, 64, 32, 3]
 
         Raises:
             TypeError: If weghts or activation function is invalid
@@ -25,6 +25,7 @@ class AutoEncoder(torch.nn.Module):
         self.activation_function = self.__get_activation(activation)
         
         self.weights = self.params['weights']
+        self.order = self.params['order']
         
         if self.weights is None:
             raise TypeError("Missing weight param")   
@@ -39,7 +40,7 @@ class AutoEncoder(torch.nn.Module):
         """
         layers = []
         for curr_weights, next_weights in zip(self.weights[:-1], self.weights[1:]):
-            layers.append(LinearLayer(curr_weights, next_weights, self.activation_function, len(layers) - 2 == len(self.weights)))
+            layers.append(LinearLayer(curr_weights, next_weights, self.activation_function, len(layers) + 1 == len(self.weights), self.order))
         self.net = torch.nn.Sequential(*layers)
         
     def __create_decoder(self) -> None:
@@ -47,7 +48,7 @@ class AutoEncoder(torch.nn.Module):
         """
         layers = []
         for curr_weights, next_weights in zip(reversed(self.weights[1:]), reversed(self.weights[:-1])):
-            layers.append(LinearLayer(curr_weights, next_weights, self.activation_function, len(layers) + 1 == len(self.weights)))
+            layers.append(LinearLayer(curr_weights, next_weights, self.activation_function, len(layers) + 1 == len(self.weights), self.order))
 
         self.net = torch.nn.Sequential(*layers)
         
@@ -62,7 +63,7 @@ class AutoEncoder(torch.nn.Module):
             case _:
                 raise TypeError(f"Invalid activation function {activation}")
             
-    def forward(self, x: List[torch.Tensor]) -> List[torch.Tensor]:
+    def forward(self, x: torch.Tensor) -> List[torch.Tensor]:
         """Forward function of the autoencoder
 
         Args:
@@ -78,11 +79,34 @@ class AutoEncoder(torch.nn.Module):
         
 
 if __name__ == '__main__':
-    params = {'activation': 'relu', 'weights': [2, 3 , 4]}
+    params = {'activation': 'elu', 'weights': [4, 3, 2], 'order': 1}
 
     encoder = AutoEncoder(params=params)
-    out = encoder([torch.ones(2), torch.ones(2)])
+    out = encoder([torch.ones(4), torch.ones(4)])
     print(out)
 
-    decoder = AutoEncoder(params=params, name='decoder')
-    print(decoder(out))
+    #decoder = AutoEncoder(params=params, name='decoder')
+    #print(decoder(out))
+    criterion = torch.nn.MSELoss()
+    optimizer = torch.optim.SGD(encoder.parameters(), lr=0.01)
+
+    # Training loop
+    num_epochs = 100
+    for epoch in range(num_epochs):
+        encoder.train()  # Set model to training mode
+        optimizer.zero_grad()  # Zero the gradients
+
+        # Forward pass
+        outputs = encoder(torch.ones((2,4)))
+        loss = criterion(outputs, torch.ones((2,2)))
+
+        # Backward pass
+        loss.backward()
+        optimizer.step()
+
+        # Print progress
+        if (epoch+1) % 10 == 0:
+            print(f'Epoch [{epoch+1}/{num_epochs}], Loss: {loss.item():.4f}')
+
+    print("Training finished.")
+    

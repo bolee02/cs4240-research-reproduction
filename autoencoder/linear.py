@@ -29,14 +29,15 @@ class LinearLayer(torch.nn.Linear):
         else:
             self.forward = self.forward_ddx
         
-    def forward_dx(self, input: List[torch.Tensor]) -> List[torch.Tensor]:
+    def forward_dx(self, input: torch.Tensor) -> torch.Tensor:
         """_summary_
 
         Args:
             input (list): list containing [x, dx]
         """
         x, dx = input
-
+        dim = self.weight.shape[0]
+        
         if self.last:
             x = F.linear(x, self.weight, self.bias)
             dx = F.linear(dx, self.weight, torch.zeros_like(self.bias))
@@ -45,15 +46,19 @@ class LinearLayer(torch.nn.Linear):
             dx = self.activation_derivative(x) * F.linear(dx, self.weight, torch.zeros_like(self.bias))
             x = self.activation_function(x)
             
-        return [x, dx]
-    
-    def forward_ddx(self, input: List[torch.Tensor]) -> List[torch.Tensor]:
+        x = x.reshape(1, dim)
+        dx = dx.reshape(1, dim)
+
+        return torch.cat((x, dx), dim=0)        
+        
+    def forward_ddx(self, input: torch.Tensor) -> torch.Tensor:
         """
 
         Args:
             input (list): list containing [x, dx, ddx]
         """
         x, dx, ddx = input
+        dim = self.weight.shape[0]
         
         if self.last:
             x = F.linear(x, self.weight, self.bias)
@@ -71,9 +76,13 @@ class LinearLayer(torch.nn.Linear):
             ddx = ddactivation * dx_ + dactivation * ddx_
             
             x = self.activation_function(x)
+                
+        x = x.reshape(1, dim)
+        dx = dx.reshape(1, dim)
+        ddx = ddx.reshape(1, dim)
         
-        return [x, dx, ddx]
-        
+
+        return torch.cat((x, dx, ddx), dim=0)        
         
     def __get_activation_derivative(self) -> Callable:
         if isinstance(self.activation_function, torch.nn.ReLU):
@@ -81,7 +90,7 @@ class LinearLayer(torch.nn.Linear):
         if isinstance(self.activation_function, torch.nn.ELU):
             return lambda x: torch.minimum(x,torch.exp(x))
         if isinstance(self.activation_function, torch.nn.Sigmoid):
-            return lambda x: self.activation_function(x) * (1 - self.activation_function(x)) 
+            return lambda x: self.dsigmoid(x)
         
     def __get_activation_2nd_derivative(self) -> Callable:
         if isinstance(self.activation_function, torch.nn.ReLU):
@@ -89,7 +98,11 @@ class LinearLayer(torch.nn.Linear):
         if isinstance(self.activation_function, torch.nn.ELU):
             return lambda x, dx=0: torch.where(x > 0,torch.exp(x), torch.zeros_like(x))
         if isinstance(self.activation_function, torch.nn.Sigmoid):
-            return lambda x, dx=0: self.activation_function(dx) * (1 - self.activation_function(dx)) 
+            return lambda x, dx=0: self.dsigmoid(dx) 
+    
+    def dsigmoid(self, x):
+        sigmoid = self.activation_function(x)
+        return sigmoid * (1 - sigmoid) 
         
         
 if __name__ == "__main__":
