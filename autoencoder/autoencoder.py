@@ -1,4 +1,6 @@
+from typing import List, Dict
 import torch
+from linear import LinearLayer
 
 class AutoEncoder(torch.nn.Module):
     RELU = 'relu'
@@ -6,7 +8,7 @@ class AutoEncoder(torch.nn.Module):
     ELU = 'elu'
     
     
-    def __init__(self, params = {}, name='encoder',*args, **kwargs) -> None:
+    def __init__(self, params:Dict = {}, name:str='encoder',*args, **kwargs) -> None:
         """_summary_
 
         Args:
@@ -37,22 +39,19 @@ class AutoEncoder(torch.nn.Module):
         """
         layers = []
         for curr_weights, next_weights in zip(self.weights[:-1], self.weights[1:]):
-            layers.append(torch.nn.Linear(curr_weights, next_weights))
-            layers.append(self.activation_function)
-        
-        # Ignore last entry (array ends with activation function, should end with Linear layer)
-        self.net = torch.nn.Sequential(*layers[:-1])
+            layers.append(LinearLayer(curr_weights, next_weights, self.activation_function, len(layers) - 2 == len(self.weights)))
+        self.net = torch.nn.Sequential(*layers)
         
     def __create_decoder(self) -> None:
+        """Creates decoder, the weights are swapped and reversed compared to the encoder
+        """
         layers = []
         for curr_weights, next_weights in zip(reversed(self.weights[1:]), reversed(self.weights[:-1])):
-            layers.append(torch.nn.Linear(curr_weights, next_weights))
-            layers.append(self.activation_function)
+            layers.append(LinearLayer(curr_weights, next_weights, self.activation_function, len(layers) + 1 == len(self.weights)))
+
+        self.net = torch.nn.Sequential(*layers)
         
-        # Ignore last entry (array ends with activation function, should end with Linear layer)
-        self.net = torch.nn.Sequential(*layers[:-1])
-        
-    def __get_activation(self, activation='relu') -> torch.nn.Module:
+    def __get_activation(self, activation:str='relu') -> torch.nn.Module:
         match (activation):
             case self.RELU:
                 return torch.nn.ReLU()
@@ -63,14 +62,26 @@ class AutoEncoder(torch.nn.Module):
             case _:
                 raise TypeError(f"Invalid activation function {activation}")
             
-    def forward(self, x):
+    def forward(self, x: List[torch.Tensor]) -> List[torch.Tensor]:
+        """Forward function of the autoencoder
+
+        Args:
+            x (List[Tensor]): either the List has 2 or 3 elements
+            if it has 2 elements the model order has to be set to 1
+            if it has 3 elements the model order has to be set to 2
+
+        Returns:
+            List[torch.Tensor]: returns the forward passed list whit the same number of elements as the input
+        """
         return self.net(x)
+    
+        
 
 if __name__ == '__main__':
     params = {'activation': 'relu', 'weights': [2, 3 , 4]}
 
     encoder = AutoEncoder(params=params)
-    out = encoder(torch.ones(2))
+    out = encoder([torch.ones(2), torch.ones(2)])
     print(out)
 
     decoder = AutoEncoder(params=params, name='decoder')
