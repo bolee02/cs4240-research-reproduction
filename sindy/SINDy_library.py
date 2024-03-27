@@ -1,7 +1,7 @@
 import torch
 
 
-def sindy_library_tf(z, latent_dim, poly_order, include_sine=False):
+def sindy_library_pt(z, latent_dim, poly_order, include_sine=False):
     """
     Build the SINDy library for a first order system.
 
@@ -35,7 +35,7 @@ def sindy_library_tf(z, latent_dim, poly_order, include_sine=False):
     return torch.stack(library, dim=1)
 
 
-def sindy_library_tf_order2(z, dz, latent_dim, poly_order, include_sine=False):
+def sindy_library_pt_order2(z, dz, latent_dim, poly_order, include_sine=False):
     """
     Build the SINDy library for a second-order system.
 
