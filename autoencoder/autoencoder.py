@@ -1,6 +1,6 @@
 from typing import List, Dict
 import torch
-from linear import LinearLayer
+from autoencoder.linear import LinearLayer
 
 class AutoEncoder(torch.nn.Module):
     RELU = 'relu'
@@ -24,8 +24,8 @@ class AutoEncoder(torch.nn.Module):
         activation = self.params['activation']
         self.activation_function = self.__get_activation(activation)
         
-        self.weights = self.params['weights']
-        self.order = self.params['order']
+        self.weights = [self.params['input_dim']] + self.params['widths'] + [self.params['latent_dim']] 
+        self.order = self.params['model_order']
         
         if self.weights is None:
             raise TypeError("Missing weight param")   
@@ -98,7 +98,7 @@ if __name__ == '__main__':
 
         # Forward pass
         outputs = encoder(torch.ones((2,4)))
-        loss = criterion(outputs, torch.ones((2,2)))
+        loss = criterion(outputs)
 
         # Backward pass
         loss.backward()

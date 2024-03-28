@@ -19,7 +19,7 @@ class LinearLayer(torch.nn.Linear):
             device (_type_, optional): _description_. Defaults to None.
             dtype (_type_, optional): _description_. Defaults to None.
         """
-        super().__init__(in_features, out_features, bias, device, dtype)
+        super().__init__(in_features, out_features, bias, device, dtype=torch.float64)
         self.activation_function = activation_function
         self.activation_derivative = self.__get_activation_derivative()
         self.activation_2nd_derivative = self.__get_activation_2nd_derivative()
@@ -35,7 +35,7 @@ class LinearLayer(torch.nn.Linear):
         Args:
             input (list): list containing [x, dx]
         """
-        x, dx = input
+        x, dx = input[:input.shape[0]//2], input[input.shape[0]//2:] 
         dim = self.weight.shape[0]
         
         if self.last:
@@ -45,9 +45,6 @@ class LinearLayer(torch.nn.Linear):
             x = F.linear(x, self.weight, self.bias)
             dx = self.activation_derivative(x) * F.linear(dx, self.weight, torch.zeros_like(self.bias))
             x = self.activation_function(x)
-            
-        x = x.reshape(1, dim)
-        dx = dx.reshape(1, dim)
 
         return torch.cat((x, dx), dim=0)        
         

@@ -6,7 +6,7 @@ class Loss(torch.nn.Module):
 
         Args:
             lambda_1 (float): loss weight decoder
-            lambda_2 (float): loss_weight sindy z
+            lambda_2 (float): loss weight sindy z
             lambda_3 (float): loss weight sindy x
             lambda_r (float): loss weight sindy regularization
             order (int, optional): Order of the model can be 1 or 2. Defaults to 1.
@@ -24,7 +24,7 @@ class Loss(torch.nn.Module):
         else:
             self.forward = self.forward_ddx
     
-    def forward_dx(self, X: torch.Tensor, dZ: torch.Tensor, X_decode: torch.Tensor, sindy_coeffs: torch.Tensor) -> torch.Tensor:
+    def forward_dx(self, x, dx, dz, dz_pred, x_decode, dx_decode, sindy_coeffs: torch.Tensor) -> torch.Tensor:
         """Forward method of the 1st order model
 
         Args:
@@ -36,9 +36,7 @@ class Loss(torch.nn.Module):
         Returns:
             torch.Tensor: _description_
         """
-        x, dx = X
-        dz, dz_pred = dZ
-        x_decode, dx_decode = X_decode
+
         loss = 0
         
         loss += self.lambda_1 * torch.mean((x - x_decode)**2)
