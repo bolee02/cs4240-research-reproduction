@@ -30,7 +30,7 @@ if __name__ == "__main__":
 
     loss_item = "Loss:"
     # Training loop
-    num_epochs = params['epoch_size']
+    num_epochs = params['max_epochs']
     with tqdm(range(num_epochs), postfix=loss_item) as epochs:
         for epoch in epochs:
             sindy.train()  # Set model to training mode
@@ -42,4 +42,19 @@ if __name__ == "__main__":
             epochs.set_postfix_str(f"Loss: {loss.item():.4f}")
             # Backward pass
             loss.backward()
-            optimizer.step()    
+            optimizer.step()
+            
+    loss.set_regularization(False)
+    refinement_epochs = params['refinement_epochs']    
+    with tqdm(range(refinement_epochs), postfix=loss_item) as epochs:
+        for epoch in epochs:
+            sindy.train()  # Set model to training mode
+            optimizer.zero_grad()  # Zero the gradients
+
+            # Forward pass
+            x, dx, dz, dz_pred, x_decode, dx_decode, sindy_coefficients, sindy_predict = sindy(torch.from_numpy(training_data['x']).to(device=device), torch.from_numpy(training_data['dx']).to(device=device),0)
+            loss = criterion(x, dx, dz, dz_pred, x_decode, dx_decode, sindy_coefficients)
+            epochs.set_postfix_str(f"Loss: {loss.item():.4f}")
+            # Backward pass
+            loss.backward()
+            optimizer.step()
