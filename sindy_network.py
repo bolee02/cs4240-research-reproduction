@@ -38,7 +38,7 @@ class SINDy(torch.nn.Module):
       self.coefficient_mask = self.params['coefficient_initialization']
       self.coefficient_threshold = self.params['coefficient_threshold']
       #initialize sindy coefficients  
-      self.sindy_coefficients = torch.zeros((library_size(self.latent_dim, self.poly_order), self.latent_dim))
+      self.sindy_coefficients = torch.zeros(12, self.latent_dim)#(library_size(self.latent_dim, self.poly_order), self.latent_dim))
       self.init_sindy_coefficients()
 
 
@@ -55,7 +55,7 @@ class SINDy(torch.nn.Module):
       elif name == 'normal':
         self.sindy_coefficients = torch.nn.init.normal_(self.sindy_coefficients, mean=0, std=std) 
     
-      self.sindy_coefficients = self.sindy_coefficients.to(torch.float64).to(device='cuda')
+      self.sindy_coefficients = self.sindy_coefficients.to(torch.float64)#.to(device='cuda')
 
     def forward(self, x, dx, ddx)-> torch.Tensor:
 

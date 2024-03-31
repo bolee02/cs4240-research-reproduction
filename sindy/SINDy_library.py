@@ -19,7 +19,7 @@ def sindy_library_pt(z, latent_dim, poly_order, include_sine=False):
         number of library functions. The number of library functions is determined by the number
         of state variables of the input, the polynomial order, and whether or not sines are included.
     """
-    library = [torch.ones(z.size(0)).to(device='cuda')]  # initialize library
+    library = [torch.ones(z.size(0))]#.to(device='cuda')]  # initialize library
     # append state variables
 
     sample_list = range(latent_dim)
@@ -28,14 +28,14 @@ def sindy_library_pt(z, latent_dim, poly_order, include_sine=False):
     for n in range(1, poly_order+1):
         list_combinations = list(combinations_with_replacement(sample_list, n))
         for combination in list_combinations:
-            library.append(torch.prod(z[:, combination], dim=1).to(device='cuda'))
+            library.append(torch.prod(z[:, combination], dim=1))#.to(device='cuda'))
 
     # add sine terms if included
     if include_sine:
         for i in range(latent_dim):
             library.append(torch.sin(z[:, i]))
 
-    return torch.stack(library, dim=1).to(device='cuda')
+    return torch.stack(library, dim=1)#.to(device='cuda')
 
 def library_size(latent_dim, poly_order):
     f = lambda latent_dim, poly_order: math.comb(latent_dim + poly_order -1, poly_order)
