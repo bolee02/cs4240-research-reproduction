@@ -26,7 +26,7 @@ if __name__ == "__main__":
         params['loss_weight_sindy_regularization']
         )
 
-    optimizer = torch.optim.Adam(sindy.parameters(), lr=0.01)
+    optimizer = torch.optim.Adam(sindy.parameters(), lr=params['learning_rate'])
 
     loss_item = "Loss:"
     # Training loop
