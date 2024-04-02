@@ -54,6 +54,7 @@ class LinearLayer(torch.nn.Linear):
         Args:
             input (list): list containing [x, dx, ddx]
         """
+
         x, dx, ddx = input
         dim = self.weight.shape[0]
         

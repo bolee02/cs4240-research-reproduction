@@ -37,11 +37,15 @@ def sindy_library_pt(z, latent_dim, poly_order, include_sine=False):
 
     return torch.stack(library, dim=1)#.to(device='cuda')
 
-def library_size(latent_dim, poly_order):
+def library_size(latent_dim, poly_order, include_sine=False, include_constant=True):
     f = lambda latent_dim, poly_order: math.comb(latent_dim + poly_order -1, poly_order)
     total = 0
     for i in range(poly_order+1):
         total += f(latent_dim, i)
+    if include_sine:
+        total += latent_dim
+    if not include_constant:
+        total -= 1
     return total
     
 def sindy_library_pt_order2(z, dz, latent_dim, poly_order, include_sine=False):
@@ -104,17 +108,6 @@ def poly_product(z, library, order, index, latent_dim, seen_combinations=None):
 #         for j in range(index, latent_dim):  
 #             poly_product(z, library, order - 1, j, latent_dim)
 #             library.append(torch.prod(z[:, [index, j]], dim=1))
-
-
-def library_size(n, poly_order, use_sine=False, include_constant=True):
-    l = 0
-    for k in range(poly_order+1):
-        l += int(binom(n+k-1,k))
-    if use_sine:
-        l += n
-    if not include_constant:
-        l -= 1
-    return l
 
 def cust_sindy(z, latent_dim, poly_order, include_sine=False):
     library = torch.zeros_like(z)
