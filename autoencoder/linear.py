@@ -54,8 +54,9 @@ class LinearLayer(torch.nn.Linear):
         Args:
             input (list): list containing [x, dx, ddx]
         """
-        x, dx, ddx = input
-        dim = self.weight.shape[0]
+        slicer = input.shape[0]//3
+        x, dx, ddx = input[:slicer], input[slicer:2*slicer], input[2*slicer:] 
+
         
         if self.last:
             x = F.linear(x, self.weight, self.bias)
@@ -73,10 +74,6 @@ class LinearLayer(torch.nn.Linear):
             ddx = ddactivation * dx_ + dactivation * ddx_
             
             x = self.activation_function(x)
-                
-        x = x.reshape(1, dim)
-        dx = dx.reshape(1, dim)
-        ddx = ddx.reshape(1, dim)
         
 
         return torch.cat((x, dx, ddx), dim=0)        

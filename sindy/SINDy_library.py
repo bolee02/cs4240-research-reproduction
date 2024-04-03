@@ -63,25 +63,25 @@ def sindy_library_pt_order2(z, dz, latent_dim, poly_order, include_sine=False):
         number of library functions. The number of library functions is determined by the number
         of state variables of the input, the polynomial order, and whether or not sines are included.
     """
-    library = [torch.ones(z.size(0))]  # initialize library
+    library = [torch.ones(z.size(0)).to(device='cuda')]  # initialize library
 
     # concatenate z and dz
     z_combined = torch.cat([z, dz], dim=1)
 
-    # append state variables and combinations
-    for i in range(2 * latent_dim):
-        library.append(z_combined[:, i])
+    sample_list = range(2*latent_dim)
+    list_combinations = list()
 
-    # add polynomial terms
-    for order in range(2, poly_order + 1):
-        poly_add(z_combined, library, order, 2 * latent_dim)
+    for n in range(1, poly_order+1):
+        list_combinations = list(combinations_with_replacement(sample_list, n))
+        for combination in list_combinations:
+            library.append(torch.prod(z_combined[:, combination], dim=1).to(device='cuda'))
 
     # add sine terms if included
     if include_sine:
-        for i in range(2 * latent_dim):
+        for i in range(2*latent_dim):
             library.append(torch.sin(z_combined[:, i]))
 
-    return torch.stack(library, dim=1)
+    return torch.stack(library, dim=1).to(device='cuda')
 
 
 def poly_add(z, library, order, latent_dim):
@@ -106,15 +106,7 @@ def poly_product(z, library, order, index, latent_dim, seen_combinations=None):
 #             library.append(torch.prod(z[:, [index, j]], dim=1))
 
 
-def library_size(n, poly_order, use_sine=False, include_constant=True):
-    l = 0
-    for k in range(poly_order+1):
-        l += int(binom(n+k-1,k))
-    if use_sine:
-        l += n
-    if not include_constant:
-        l -= 1
-    return l
+
 
 def cust_sindy(z, latent_dim, poly_order, include_sine=False):
     library = torch.zeros_like(z)

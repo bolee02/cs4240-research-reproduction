@@ -38,8 +38,13 @@ class SINDy(torch.nn.Module):
       self.coefficient_mask = self.params['coefficient_initialization']
       self.coefficient_threshold = self.params['coefficient_threshold']
       #initialize sindy coefficients  
-      self.sindy_coefficients = torch.zeros((library_size(self.latent_dim, self.poly_order), self.latent_dim))
+      self.sindy_coefficients = torch.zeros((self.library_dim, self.latent_dim))
       self.init_sindy_coefficients()
+      
+      if self.model_order == 1:
+        self.forward = self.forward_dx
+      else:
+        self.forward = self.forward_ddx
 
 
     def init_sindy_coefficients(self, name='normal', std=1., k=3):
@@ -57,7 +62,7 @@ class SINDy(torch.nn.Module):
     
       self.sindy_coefficients = self.sindy_coefficients.to(torch.float64).to(device='cuda')
 
-    def forward(self, x, dx, ddx)-> torch.Tensor:
+    def forward_dx(self, x, dx, ddx)-> torch.Tensor:
 
       #x = x.reshape(1, *x.shape)
       #dx = dx.reshape(1, *dx.shape)
@@ -88,11 +93,40 @@ class SINDy(torch.nn.Module):
       dx_decode = x_decode[x_decode.shape[0]//2:]
       x_decode = x_decode[:x_decode.shape[0]//2]
 
-      if self.model_order == 1:
-       dz_predict = sindy_predict
-       dzz_predict = None
-      else:
-       ddz_predict = sindy_predict
-       dz_predict = None
+      dz_predict = sindy_predict
 
-      return x, dx, dz_predict, dz, x_decode, dx_decode, self.sindy_coefficients, sindy_predict
+
+      return x, dx, dz_predict, dz, x_decode, dx_decode, self.sindy_coefficients, sindy_predict, torch.zeros(1), torch.zeros(1), torch.zeros(1)
+    
+    def forward_ddx(self, x: torch.Tensor, dx: torch.Tensor, ddx: torch.Tensor):
+      
+      out = self.encoder(torch.cat((x, dx, ddx)))
+      slicer = out.shape[0]//3
+      z, dz, ddz = out[:slicer], out[slicer:2*slicer], out[2*slicer:] 
+      
+      #create Theta
+      Theta = sindy_library_pt_order2(z, dz, self.latent_dim, self.poly_order, self.include_sine)
+      #apply thresholding or not
+      if self.sequential_thresholding:
+        '''
+        tmp = torch.rand(size=(library_dim,latent_dim), dtype=torch.float32)
+        mask = torch.zeros_like(tmp)
+        mask = mask.where(self.coefficient_mask, tmp)
+        '''
+        mask = torch.where(self.sindy_coefficients > self.coefficient_threshold, self.sindy_coefficients, 0)
+        sindy_predict = torch.matmul(Theta, mask*self.sindy_coefficients)
+      else:
+        sindy_predict = torch.matmul(Theta, self.sindy_coefficients)
+
+      #decode
+      out_decode = self.decoder(torch.cat((z, dz, ddz)))
+      slicer = out_decode.shape[0]//3
+      x_decode, dx_decode, ddx_decode = out_decode[:slicer], out_decode[slicer:2*slicer], out_decode[2*slicer:] 
+
+      
+
+      dz_predict = sindy_predict
+
+
+      return x, dx, dz_predict, dz, x_decode, dx_decode, self.sindy_coefficients, sindy_predict, ddz, ddx, ddx_decode
+    
