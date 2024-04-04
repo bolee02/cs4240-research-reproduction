@@ -6,7 +6,7 @@ from autoencoder.autoencoder import AutoEncoder
 from autoencoder.loss import Loss
 from sindy_network import SINDy
 from tqdm import tqdm
-
+import dill
 
 def train():
     with tqdm(range(num_epochs), postfix=loss_item) as epochs:
@@ -26,7 +26,7 @@ def train():
             if criterion.regularization and params['sequential_thresholding'] and (epoch % params['threshold_frequency'] == 0) and (epoch > 0):
                 sindy.coefficient_mask = torch.abs(sindy_coefficients) > params['coefficient_threshold']
                 print('THRESHOLDING: %d active coefficients' % torch.sum(sindy.coefficient_mask))
-                torch.save(sindy, f'model_lorenz_1_{epoch}')
+                dill.dump(sindy, open(f'model_lorenz_1_{epoch}', 'wb'))
                 
 if __name__ == "__main__":
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
