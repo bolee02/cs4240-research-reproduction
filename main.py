@@ -15,17 +15,21 @@ def train():
             optimizer.zero_grad()  # Zero the gradients
 
             # Forward pass
-            x, dx, dz, dz_pred, x_decode, dx_decode, sindy_coefficients, sindy_predict, ddz, ddx, ddx_decode = sindy(torch.from_numpy(training_data['x']).to(device=device), torch.from_numpy(training_data['dx']).to(device=device), torch.from_numpy(training_data['ddx']).to(device=device))
-            loss = criterion(x, dx, dz, dz_pred, x_decode, dx_decode, sindy_coefficients, ddz, ddx, ddx_decode)
+            x, dx, dz, dz_pred, x_decode, dx_decode, sindy_coefficients, sindy_predict, ddz, ddx, ddx_decode, z = sindy(torch.from_numpy(training_data['x']).to(device=device), torch.from_numpy(training_data['dx']).to(device=device), torch.from_numpy(training_data['ddx']).to(device=device))
+            loss = criterion(x, dx, dz, dz_pred, x_decode, dx_decode, sindy_coefficients, ddz, ddx, ddx_decode, sindy.coefficient_mask)
             epochs.set_postfix_str(f"Loss: {loss.item():.4f}")
             # Backward pass
             loss.backward()
             optimizer.step()
+            
+            ### Every few iterations update coefficient mask, we no longer update the mask during unregularized training
+            if criterion.regularization and params['sequential_thresholding'] and (epoch % params['threshold_frequency'] == 0) and (epoch > 0):
+                sindy.coefficient_mask = torch.abs(sindy_coefficients) > params['coefficient_threshold']
 
 if __name__ == "__main__":
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
-    
-    params = pickle.load(open('utils/model2_params.pkl', 'rb'))
+    print(device)
+    params = pickle.load(open('utils/model1_params.pkl', 'rb'))
     training_data = pickle.load(open('dataset_generation/training_data.pkl', 'rb'))
     encoder = AutoEncoder(params, 'encoder')
     decoder = AutoEncoder(params, 'decoder')
@@ -46,8 +50,10 @@ if __name__ == "__main__":
     # Training loop
     num_epochs = params['max_epochs']
     train()
-            
+    
+    ### Train whitout regularization
+    num_epochs = params['refinement_epochs']
     criterion.set_regularization(False)
     train()
             
-torch.save(sindy.state_dict(), 'model_rd_1')
+    torch.save(sindy.state_dict(), 'model_lorenz_1')

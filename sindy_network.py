@@ -35,7 +35,7 @@ class SINDy(torch.nn.Module):
       self.model_order = self.params['model_order']
       self.sequential_thresholding = self.params['sequential_thresholding']
       self.coefficient_initialization = self.params['coefficient_initialization']
-      self.coefficient_mask = self.params['coefficient_initialization']
+      self.coefficient_mask = torch.from_numpy(self.params['coefficient_mask']).to('cuda')
       self.coefficient_threshold = self.params['coefficient_threshold']
       #initialize sindy coefficients  
       self.sindy_coefficients = torch.zeros((self.library_dim, self.latent_dim))
@@ -60,7 +60,7 @@ class SINDy(torch.nn.Module):
       elif name == 'normal':
         self.sindy_coefficients = torch.nn.init.normal_(self.sindy_coefficients, mean=0, std=std) 
     
-      self.sindy_coefficients = self.sindy_coefficients.to(torch.float64).to(device='cuda')
+      self.sindy_coefficients = self.sindy_coefficients.to(torch.float64).to('cuda')
 
     def forward_dx(self, x, dx, ddx)-> torch.Tensor:
 
@@ -83,8 +83,7 @@ class SINDy(torch.nn.Module):
         mask = torch.zeros_like(tmp)
         mask = mask.where(self.coefficient_mask, tmp)
         '''
-        mask = torch.where(self.sindy_coefficients > self.coefficient_threshold, self.sindy_coefficients, 0)
-        sindy_predict = torch.matmul(Theta, mask*self.sindy_coefficients)
+        sindy_predict = torch.matmul(Theta, self.coefficient_mask*self.sindy_coefficients)
       else:
         sindy_predict = torch.matmul(Theta, self.sindy_coefficients)
 
@@ -96,7 +95,7 @@ class SINDy(torch.nn.Module):
       dz_predict = sindy_predict
 
 
-      return x, dx, dz_predict, dz, x_decode, dx_decode, self.sindy_coefficients, sindy_predict, torch.zeros(1), torch.zeros(1), torch.zeros(1)
+      return x, dx, dz_predict, dz, x_decode, dx_decode, self.sindy_coefficients, sindy_predict, torch.zeros(1), torch.zeros(1), torch.zeros(1), z
     
     def forward_ddx(self, x: torch.Tensor, dx: torch.Tensor, ddx: torch.Tensor):
       
@@ -128,5 +127,5 @@ class SINDy(torch.nn.Module):
       dz_predict = sindy_predict
 
 
-      return x, dx, dz_predict, dz, x_decode, dx_decode, self.sindy_coefficients, sindy_predict, ddz, ddx, ddx_decode
+      return x, dx, dz_predict, dz, x_decode, dx_decode, self.sindy_coefficients, sindy_predict, ddz, ddx, ddx_decode, z
     

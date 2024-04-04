@@ -24,7 +24,7 @@ class Loss(torch.nn.Module):
         else:
             self.forward = self.forward_ddx
     
-    def forward_dx(self, x, dx, dz, dz_pred, x_decode, dx_decode, sindy_coeffs: torch.Tensor, ddz, ddx, ddx_decode) -> torch.Tensor:
+    def forward_dx(self, x, dx, dz, dz_pred, x_decode, dx_decode, sindy_coeffs: torch.Tensor, ddz, ddx, ddx_decode, coeff_mask) -> torch.Tensor:
         """Forward method of the 1st order model
 
         Args:
@@ -42,11 +42,11 @@ class Loss(torch.nn.Module):
         loss += self.lambda_1 * torch.mean((x - x_decode)**2)
         loss += self.lambda_2 * torch.mean((dz - dz_pred)**2)
         loss += self.lambda_3 * torch.mean((dx - dx_decode)**2)
-        loss += int(self.regularization) * self.lambda_r * torch.mean(sindy_coeffs)
+        loss += int(self.regularization) * self.lambda_r * torch.mean(sindy_coeffs*coeff_mask) 
     
         return loss
     
-    def forward_ddx(self, x, dx, dz, dz_pred, x_decode, dx_decode, sindy_coeffs: torch.Tensor, ddz, ddx, ddx_decode)-> torch.Tensor:
+    def forward_ddx(self, x, dx, dz, dz_pred, x_decode, dx_decode, sindy_coeffs: torch.Tensor, ddz, ddx, ddx_decode, coeff_mask) -> torch.Tensor:
         """Forward method of the 2nd order model
 
         Args:
@@ -64,7 +64,7 @@ class Loss(torch.nn.Module):
         # dz_pred is in this case ddz_pred
         loss += self.lambda_2 * torch.mean((ddz - dz_pred)**2)
         loss += self.lambda_3 * torch.mean((ddx - ddx_decode)**2)
-        loss += int(self.regularization) * self.lambda_r * torch.mean(sindy_coeffs)
+        loss += int(self.regularization) * self.lambda_r * torch.mean(sindy_coeffs*coeff_mask) 
     
         return loss
 
