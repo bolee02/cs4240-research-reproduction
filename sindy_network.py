@@ -88,7 +88,7 @@ class SINDy(torch.nn.Module):
         sindy_predict = torch.matmul(Theta, self.sindy_coefficients)
 
       #decode
-      x_decode = self.decoder(torch.cat((z, dz)))
+      x_decode = self.decoder(torch.cat((z, sindy_predict)))
       dx_decode = x_decode[x_decode.shape[0]//2:]
       x_decode = x_decode[:x_decode.shape[0]//2]
 
@@ -118,7 +118,7 @@ class SINDy(torch.nn.Module):
         sindy_predict = torch.matmul(Theta, self.sindy_coefficients)
 
       #decode
-      out_decode = self.decoder(torch.cat((z, dz, ddz)))
+      out_decode = self.decoder(torch.cat((z, dz, sindy_predict)))
       slicer = out_decode.shape[0]//3
       x_decode, dx_decode, ddx_decode = out_decode[:slicer], out_decode[slicer:2*slicer], out_decode[2*slicer:] 
 
