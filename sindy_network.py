@@ -60,7 +60,7 @@ class SINDy(torch.nn.Module):
       elif name == 'normal':
         self.sindy_coefficients = torch.nn.init.normal_(self.sindy_coefficients, mean=0, std=std) 
     
-      self.sindy_coefficients = self.sindy_coefficients.to(torch.float64).to('cuda')
+      self.sindy_coefficients = torch.nn.Parameter(self.sindy_coefficients.to(torch.float64).to('cuda'))
 
     def forward_dx(self, x, dx, ddx)-> torch.Tensor:
 
