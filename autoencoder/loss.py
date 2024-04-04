@@ -42,7 +42,7 @@ class Loss(torch.nn.Module):
         loss += self.lambda_1 * torch.mean((x - x_decode)**2)
         loss += self.lambda_2 * torch.mean((dz - dz_pred)**2)
         loss += self.lambda_3 * torch.mean((dx - dx_decode)**2)
-        loss += int(self.regularization) * self.lambda_r * torch.mean(sindy_coeffs*coeff_mask) 
+        loss += int(self.regularization) * self.lambda_r * torch.mean(torch.abs(sindy_coeffs)*coeff_mask) 
     
         return loss
     
@@ -64,7 +64,7 @@ class Loss(torch.nn.Module):
         # dz_pred is in this case ddz_pred
         loss += self.lambda_2 * torch.mean((ddz - dz_pred)**2)
         loss += self.lambda_3 * torch.mean((ddx - ddx_decode)**2)
-        loss += int(self.regularization) * self.lambda_r * torch.mean(sindy_coeffs*coeff_mask) 
+        loss += int(self.regularization) * self.lambda_r * torch.mean(torch.abs(sindy_coeffs)*coeff_mask) 
     
         return loss
 

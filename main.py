@@ -15,8 +15,8 @@ def train():
             optimizer.zero_grad()  # Zero the gradients
 
             # Forward pass
-            x, dx, dz, dz_pred, x_decode, dx_decode, sindy_coefficients, sindy_predict, ddz, ddx, ddx_decode, z = sindy(torch.from_numpy(training_data['x']).to(device=device), torch.from_numpy(training_data['dx']).to(device=device), torch.from_numpy(training_data['ddx']).to(device=device))
-            loss = criterion(x, dx, dz, dz_pred, x_decode, dx_decode, sindy_coefficients, ddz, ddx, ddx_decode, sindy.coefficient_mask)
+            x, dx, dz_predict, dz, x_decode, dx_decode, sindy_coefficients, sindy_predict, ddz, ddx, ddx_decode, z = sindy(torch.from_numpy(training_data['x']).to(device=device), torch.from_numpy(training_data['dx']).to(device=device), torch.from_numpy(training_data['ddx']).to(device=device))
+            loss = criterion(x, dx, dz, dz_predict, x_decode, dx_decode, sindy_coefficients, ddz, ddx, ddx_decode, sindy.coefficient_mask)
             epochs.set_postfix_str(f"Loss: {loss.item():.4f}")
             # Backward pass
             loss.backward()
@@ -25,7 +25,9 @@ def train():
             ### Every few iterations update coefficient mask, we no longer update the mask during unregularized training
             if criterion.regularization and params['sequential_thresholding'] and (epoch % params['threshold_frequency'] == 0) and (epoch > 0):
                 sindy.coefficient_mask = torch.abs(sindy_coefficients) > params['coefficient_threshold']
-
+                print('THRESHOLDING: %d active coefficients' % torch.sum(sindy.coefficient_mask))
+                torch.save(sindy, f'model_lorenz_1_{epoch}')
+                
 if __name__ == "__main__":
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
     print(device)
@@ -56,4 +58,4 @@ if __name__ == "__main__":
     criterion.set_regularization(False)
     train()
             
-    torch.save(sindy.state_dict(), 'model_lorenz_1')
+    torch.save(sindy, 'model_lorenz_1')
