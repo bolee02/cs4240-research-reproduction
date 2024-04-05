@@ -35,11 +35,11 @@ class SINDy(torch.nn.Module):
       self.model_order = self.params['model_order']
       self.sequential_thresholding = self.params['sequential_thresholding']
       self.coefficient_initialization = self.params['coefficient_initialization']
-      self.coefficient_mask = torch.from_numpy(self.params['coefficient_mask']).to('cuda')
+      self.coefficient_mask = torch.ones((self.library_dim, self.latent_dim)).to('cuda')
       self.coefficient_threshold = self.params['coefficient_threshold']
       #initialize sindy coefficients  
       self.sindy_coefficients = torch.zeros((self.library_dim, self.latent_dim))
-      self.init_sindy_coefficients()
+      self.init_sindy_coefficients(self.coefficient_initialization)
       
       if self.model_order == 1:
         self.forward = self.forward_dx
@@ -47,7 +47,7 @@ class SINDy(torch.nn.Module):
         self.forward = self.forward_ddx
 
 
-    def init_sindy_coefficients(self, name='normal', std=1., k=3):
+    def init_sindy_coefficients(self, name='normal', std=1., k=1):
 
       #self.sindy_coefficients = std*torch.randn_like(self.sindy_coefficients)
  
@@ -67,9 +67,9 @@ class SINDy(torch.nn.Module):
       #x = x.reshape(1, *x.shape)
       #dx = dx.reshape(1, *dx.shape)
       
-      z = self.encoder(torch.cat((x, dx)))
-      dz = z[z.shape[0]//2:]
-      z = z[:z.shape[0]//2]
+      out_encode = self.encoder(torch.cat((x, dx)))
+      dz = out_encode[out_encode.shape[0]//2:]
+      z = out_encode[:out_encode.shape[0]//2]
       
       #create Theta
       if self.model_order == 1:

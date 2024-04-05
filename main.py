@@ -58,4 +58,4 @@ if __name__ == "__main__":
     criterion.set_regularization(False)
     train()
             
-    torch.save(sindy, 'model_lorenz_1')
+    dill.dump(sindy, open(f'model_lorenz_1', 'wb'))
