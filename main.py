@@ -2,6 +2,9 @@ import pickle
 
 import torch
 
+import sys
+sys.path.append( "/kaggle/input/dl24-group64" )
+
 from autoencoder.autoencoder import AutoEncoder
 from autoencoder.loss import Loss
 from sindy_network import SINDy
@@ -26,13 +29,13 @@ def train():
             if criterion.regularization and params['sequential_thresholding'] and (epoch % params['threshold_frequency'] == 0) and (epoch > 0):
                 sindy.coefficient_mask = torch.abs(sindy_coefficients) > params['coefficient_threshold']
                 print('THRESHOLDING: %d active coefficients' % torch.sum(sindy.coefficient_mask))
-                dill.dump(sindy, open(f'model_lorenz_1_{epoch}', 'wb'))
+                dill.dump(sindy, open(f'model_pendulum_1_{epoch}', 'wb'))
                 
 if __name__ == "__main__":
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
     print(device)
-    params = pickle.load(open('utils/model1_params.pkl', 'rb'))
-    training_data = pickle.load(open('dataset_generation/training_data.pkl', 'rb'))
+    params = pickle.load(open('/kaggle/input/dl24-group64/utils/pendulum/model1_params.pkl', 'rb'))
+    training_data = pickle.load(open('/kaggle/input/dl24-group64/training_data.pkl', 'rb'))
     encoder = AutoEncoder(params, 'encoder')
     decoder = AutoEncoder(params, 'decoder')
     sindy = SINDy(encoder, decoder, params)
@@ -58,4 +61,4 @@ if __name__ == "__main__":
     criterion.set_regularization(False)
     train()
             
-    dill.dump(sindy, open(f'model_lorenz_1', 'wb'))
+    dill.dump(sindy, open(f'model_pendulum', 'wb'))
