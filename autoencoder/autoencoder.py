@@ -40,7 +40,8 @@ class AutoEncoder(torch.nn.Module):
         """
         layers = []
         for curr_weights, next_weights in zip(self.weights[:-1], self.weights[1:]):
-            layers.append(LinearLayer(curr_weights, next_weights, self.activation_function, len(layers) + 1 == len(self.weights), self.order))
+            
+            layers.append(LinearLayer(curr_weights, next_weights, self.activation_function, len(layers) + 2 == len(self.weights), self.order))
         self.net = torch.nn.Sequential(*layers)
         
     def __create_decoder(self) -> None:
@@ -48,7 +49,7 @@ class AutoEncoder(torch.nn.Module):
         """
         layers = []
         for curr_weights, next_weights in zip(reversed(self.weights[1:]), reversed(self.weights[:-1])):
-            layers.append(LinearLayer(curr_weights, next_weights, self.activation_function, len(layers) + 1 == len(self.weights), self.order))
+            layers.append(LinearLayer(curr_weights, next_weights, self.activation_function, len(layers) + 2 == len(self.weights), self.order))
 
         self.net = torch.nn.Sequential(*layers)
         
