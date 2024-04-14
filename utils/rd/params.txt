@@ -1,0 +1,44 @@
+input_dim = 10000
+latent_dim = 2
+model_order = 1
+poly_order = 3
+include_sine = True
+library_dim = 12
+sequential_thresholding = True
+coefficient_threshold = 0.1
+threshold_frequency = 500
+coefficient_mask = [[False False  True]
+ [ True False False]
+ [ True  True False]
+ [False False  True]
+ [False False False]
+ [False False  True]
+ [False  True False]
+ [False False False]
+ [False False False]
+ [False False False]
+ [False False False]
+ [False False False]
+ [False False False]
+ [False False False]
+ [False False False]
+ [False False False]
+ [False False False]
+ [False False False]
+ [False False False]
+ [False False False]]
+coefficient_initialization = constant
+loss_weight_decoder = 1.0
+loss_weight_sindy_z = 0.01
+loss_weight_sindy_x = 0.5
+loss_weight_sindy_regularization = 0.1
+activation = sigmoid
+widths = [256]
+epoch_size = 7999
+batch_size = 1000
+learning_rate = 0.001
+data_path = /Users/roman/OneDrive/Bureau/Dossiers/QIST/Q3/DL/project/DL24-Group64/dataset_generation/rd/
+print_progress = True
+print_frequency = 100
+max_epochs = 3001
+refinement_epochs = 1001
